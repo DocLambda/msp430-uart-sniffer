@@ -266,8 +266,22 @@ __interrupt void UART1_RX_ISR(void)
 				TA1CCTL1 |= CAP;	// Switch back from compare to capture mode
 				rx1_bitcount = 8;	// Re-load bit counter
 
-				while (!(IFG2&UCA0TXIFG));			// USCI_A0 TX buffer ready?
-				UCA0TXBUF = rx1_byte;				// TX -> RXed character
+				/* Lock the tx-queue to add one more byte */
+				while (tx_lock);	// FIXME: This should be atomic test-and-set
+				tx_lock = 1;
+
+				/* Store received byte in transmission buffer WITH LOCK HELD */
+				tx_buffer[tx_head] = rx1_byte;		// Add received byte
+				tx_head = (tx_head + 1) % TX_CAPACITY;	// Switch to next free slot
+				tx_count++;				// We have one more to tx
+				if (tx_count >= TX_CAPACITY)
+					P1OUT &= ~LED_RED;		// Turn red led off for overflow
+
+				/* Release lock to tx-queue */
+				tx_lock = 0;
+
+				/* Schedule transmission in main loop */
+				__bic_SR_register_on_exit(LPM0_bits);
 			}
 		}
 	}
