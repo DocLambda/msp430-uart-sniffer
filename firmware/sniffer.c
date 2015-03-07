@@ -51,6 +51,9 @@
  *    description:	MSP430G2xx3 Demo - USCI_A0, 115200 UART Echo ISR, DCO SMCLK
  *    author:		D. Dang (Texas Instruments Inc) -- February 2011
  *
+ * *  file:		msp430g2xx3_ta_uart9600.c
+ *    description:	MSP430G2xx3 Demo - Timer_A, Ultra-Low Pwr UART 9600 Echo, 32kHz ACLK
+ *    author:		D. Dang (Texas Instruments Inc) -- December 2010
  ******************************************************************************/
 
 #include <msp430.h>
