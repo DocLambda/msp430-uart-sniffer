@@ -109,6 +109,9 @@ void setup_hwuart(void)
 
 int main(void)
 {
+	const char *readymsg = "UART SNIFFER READY\r\n";
+	int i;
+
 	/* Disable watchdog */
 	WDTCTL = WDTPW + WDTHOLD;
 
@@ -132,6 +135,19 @@ int main(void)
 	 * for transmitting the gathered data to the host.
 	 */
 	setup_hwuart();
+
+	/* Signal Readyness */
+	P1OUT |= LED_RED; 				// Red LED on to signal READY
+	P1OUT |= LED_GREEN; 				// Green LED on to signal READY
+
+	__enable_interrupt();
+
+	/* Send ready message to the host */
+	for (i = 0; i < 21; i++)
+	{
+		while (!(IFG2 & UCA0TXIFG));		// USCI_A0 TX buffer ready?
+		UCA0TXBUF = readymsg[i];		// TX -> RXed character
+	}
 
 	__bis_SR_register(LPM0_bits + GIE);		// Enter LPM0, interrupts enabled
 
