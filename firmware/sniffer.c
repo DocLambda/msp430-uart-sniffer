@@ -151,10 +151,10 @@ int main(void)
 	return 0;
 }
 
-// Echo back RXed character, confirm TX buffer is ready first
+/* Interrupt service routine for first receiver */
 #pragma vector=USCIAB0RX_VECTOR
-__interrupt void USCI0RX_ISR(void)
+__interrupt void UART0_RX_ISR(void)
 {
-  while (!(IFG2&UCA0TXIFG));                // USCI_A0 TX buffer ready?
-  UCA0TXBUF = UCA0RXBUF;                    // TX -> RXed character
+	while (!(IFG2&UCA0TXIFG));			// USCI_A0 TX buffer ready?
+	UCA0TXBUF = UCA0RXBUF;				// TX -> RXed character
 }
