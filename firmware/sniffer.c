@@ -71,6 +71,14 @@
 #define LED_RED				BIT0
 #define LED_GREEN			BIT6
 
+/* Settings for 9600 baud @ 1MHz */
+#define UART0_RXD			BIT1		// P1.1 using USCI
+#define UART0_TXD			BIT2		// P1.2 using USCI
+#define UART0_DIVIDER			104		// according to table 15.4 in users manual
+#define UART0_DIVIDER_BR0		(UART0_DIVIDER & 0xFF)
+#define UART0_DIVIDER_BR1		(UART0_DIVIDER >> 8)
+#define UART0_DIVIDER_MCTL		UCBRS0		// according to table 15.4 in users manual
+
 /* Error blink codes */
 #define ERR_LED_CYCLES_ON		200UL  * 1200UL // 200ms @ 1.2MHz
 #define ERR_LED_CYCLES_OFF		1000UL * 1200UL // 100ms @ 1.2MHz
@@ -95,6 +103,22 @@ void blink_led_and_trap(unsigned int blinks)
 	}
 }
 
+void setup_hwuart(void)
+{
+	/* Setup pins for RX and TX */
+	P1SEL  = UART0_RXD + UART0_TXD;			// Select special function for RXD and TXD
+	P1SEL2 = UART0_RXD + UART0_TXD;
+
+	/* Setup UART clock and state machine */
+	UCA0CTL1 |= UCSSEL_2;				// SMCLK
+	UCA0BR0   = UART0_DIVIDER_BR0;    	        // Baud rate generator divider settings
+	UCA0BR1   = UART0_DIVIDER_BR1;
+	UCA0MCTL  = UART0_DIVIDER_MCTL;          	// Modulation setting for baud rate generator
+	UCA0CTL1 &= ~UCSWRST;				// **Initialize USCI state machine**
+
+	IE2 |= UCA0RXIE;				// Enable USCI_A0 RX interrupt
+}
+
 int main(void)
 {
 	/* Disable watchdog */
@@ -115,14 +139,11 @@ int main(void)
 	DCOCTL  = CALDCO_1MHZ;				// Use the factory calibration data for DCO
 	BCSCTL1 = CALBC1_1MHZ;
 
-  P1SEL = BIT1 + BIT2 ;                     // P1.1 = RXD, P1.2=TXD
-  P1SEL2 = BIT1 + BIT2;
-  UCA0CTL1 |= UCSSEL_2;                     // SMCLK
-  UCA0BR0 = 8;                              // 1MHz 115200
-  UCA0BR1 = 0;                              // 1MHz 115200
-  UCA0MCTL = UCBRS2 + UCBRS0;               // Modulation UCBRSx = 5
-  UCA0CTL1 &= ~UCSWRST;                     // **Initialize USCI state machine**
-  IE2 |= UCA0RXIE;                          // Enable USCI_A0 RX interrupt
+	/* Setup the hardware UART as the first uart (RX and TX).
+	 * This uart will be used as a first receiver, but also
+	 * for transmitting the gathered data to the host.
+	 */
+	setup_hwuart();
 
   __bis_SR_register(LPM0_bits + GIE);       // Enter LPM0, interrupts enabled
 }
