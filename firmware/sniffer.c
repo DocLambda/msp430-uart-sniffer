@@ -80,6 +80,14 @@
 #define ERR_LED_CYCLES_OFF		1000UL * 1200UL // 100ms @ 1.2MHz
 #define ERR_LED_BLINKS_CALIB		1
 
+/* Variables for the TX FIFO */
+#define TX_CAPACITY			16
+volatile unsigned char tx_lock  = 0;
+volatile unsigned char tx_buffer[TX_CAPACITY];
+volatile unsigned char tx_count = 0;
+volatile unsigned char tx_head  = 0;
+volatile unsigned char tx_tail  = 0;
+
 void blink_led_and_trap(unsigned int blinks)
 {
 	unsigned int b;
@@ -158,6 +166,12 @@ int main(void)
 
 	/* Setup additional receiver */
 	setup_swuart();
+
+	/* Initialize TX FIFO */
+	for (i = 0; i < TX_CAPACITY; i++)
+	{
+		tx_buffer[i] = 0xFF;
+	}
 
 	/* Signal Readyness */
 	P1OUT |= LED_RED; 				// Red LED on to signal READY
