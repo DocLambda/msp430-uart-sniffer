@@ -145,7 +145,10 @@ int main(void)
 	 */
 	setup_hwuart();
 
-  __bis_SR_register(LPM0_bits + GIE);       // Enter LPM0, interrupts enabled
+	__bis_SR_register(LPM0_bits + GIE);		// Enter LPM0, interrupts enabled
+
+	/* We should never end up here... */
+	return 0;
 }
 
 // Echo back RXed character, confirm TX buffer is ready first
