@@ -226,7 +226,7 @@ __interrupt void UART0_RX_ISR(void)
 	tx_lock = 1;
 
 	/* Store received byte in transmission buffer WITH LOCK HELD */
-	tx_buffer[tx_head] = rx0_byte;			// Add received byte
+	tx_buffer[tx_head] = rx0_byte & 0x7F;		// Add received byte
 	tx_head = (tx_head + 1) % TX_CAPACITY;		// Switch to next free slot
 	tx_count++;					// We have one more to tx
 	if (tx_count >= TX_CAPACITY)
@@ -271,7 +271,7 @@ __interrupt void UART1_RX_ISR(void)
 				tx_lock = 1;
 
 				/* Store received byte in transmission buffer WITH LOCK HELD */
-				tx_buffer[tx_head] = rx1_byte;		// Add received byte
+				tx_buffer[tx_head] = rx1_byte | 0x80;	// Add received byte
 				tx_head = (tx_head + 1) % TX_CAPACITY;	// Switch to next free slot
 				tx_count++;				// We have one more to tx
 				if (tx_count >= TX_CAPACITY)
