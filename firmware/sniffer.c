@@ -186,7 +186,30 @@ int main(void)
 		UCA0TXBUF = readymsg[i];		// TX -> RXed character
 	}
 
-	__bis_SR_register(LPM0_bits + GIE);		// Enter LPM0, interrupts enabled
+	/* Main loop for scheduling received data for transmission */
+	while (1)
+	{
+		__bis_SR_register(LPM0_bits + GIE);	// Enter LPM0, interrupts enabled
+		P1OUT &= ~LED_GREEN;			// LED off for start of transmission
+		while (tx_count > 0)
+		{
+			while (!(IFG2 & UCA0TXIFG));	// USCI_A0 TX buffer ready?
+
+			UCA0TXBUF = tx_buffer[tx_tail];	// TX character
+			tx_buffer[tx_tail] = 0xFF;	// Clear slot
+			tx_tail = (tx_tail + 1) % TX_CAPACITY; // Move on with write pointer
+
+			/* Lock the tx-queue to remove a byte */
+			while (tx_lock);		// FIXME: This should be atomic test-and-set
+			tx_lock = 1;
+
+			tx_count--;
+
+			/* Release lock to tx-queue */
+			tx_lock = 0;
+		}
+		P1OUT |= LED_GREEN;			// LED on for end of transmission
+	}
 
 	/* We should never end up here... */
 	return 0;
