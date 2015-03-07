@@ -70,6 +70,11 @@
 #define UART0_DIVIDER_BR1		(UART0_DIVIDER >> 8)
 #define UART0_DIVIDER_MCTL		UCBRS0		// according to table 15.4 in users manual
 
+/* Settings for 9600 baud @ 1MHz */
+#define UART1_RXD			BIT1		// P2.1 using Timer1_CCI1A
+#define UART1_DIVIDER			104		// 9600baud @ 1MHz = 104.16
+#define UART1_DIVIDER_HALF		52		// half-bit duration to sample in the middle of the bit = 52.08
+
 /* Error blink codes */
 #define ERR_LED_CYCLES_ON		200UL  * 1200UL // 200ms @ 1.2MHz
 #define ERR_LED_CYCLES_OFF		1000UL * 1200UL // 100ms @ 1.2MHz
@@ -110,6 +115,18 @@ void setup_hwuart(void)
 	IE2 |= UCA0RXIE;				// Enable USCI_A0 RX interrupt
 }
 
+void setup_swuart(void)
+{
+	/* Setup timer 1 CCR1 */
+	TA1CCTL1 = SCS + CM1 + CAP + CCIE;		// Sync, high-low edge, capture, interrupt enabled
+	TA1CTL   = TASSEL_2 + MC_2;			// SMCLK, continuous mode
+
+	/* Setup the receiver pin */
+	P2OUT &= ~UART1_RXD;				// Clear pin
+	P2SEL |=  UART1_RXD;				// Timer1_CCI1A special function
+	P2DIR &= ~UART1_RXD;				// Input
+}
+
 int main(void)
 {
 	const char *readymsg = "UART SNIFFER READY\r\n";
@@ -139,6 +156,9 @@ int main(void)
 	 */
 	setup_hwuart();
 
+	/* Setup additional receiver */
+	setup_swuart();
+
 	/* Signal Readyness */
 	P1OUT |= LED_RED; 				// Red LED on to signal READY
 	P1OUT |= LED_GREEN; 				// Green LED on to signal READY
@@ -164,4 +184,10 @@ __interrupt void UART0_RX_ISR(void)
 {
 	while (!(IFG2&UCA0TXIFG));			// USCI_A0 TX buffer ready?
 	UCA0TXBUF = UCA0RXBUF;				// TX -> RXed character
+}
+
+/* Interrupt service routine for second receiver */
+#pragma vector = TIMER1_A1_VECTOR
+__interrupt void UART1_RX_ISR(void)
+{
 }
