@@ -17,7 +17,7 @@ OBJECTS  := $(SOURCES:%.c=%.o)
 all: $(BINARY) size
 
 $(BINARY): $(OBJECTS)
-	@echo "LD  $@"
+	@echo "MSPLD  $@"
 	@$(CC) $(LDFLAGS) -o $@ $(OBJECTS)
 
 .PHONEY: strip
@@ -42,5 +42,5 @@ flash: $(BINARY)
 	$(FLASH) "prog $(BINARY)"
 
 %.o: %.c
-	@echo "CC  $<"
+	@echo "MSPCC  $<"
 	@$(CC) $(CFLAGS) -c -o $@ $<
