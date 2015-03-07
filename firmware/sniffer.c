@@ -67,18 +67,56 @@
 //******************************************************************************
 #include <msp430.h>
 
+/* LEDs */
+#define LED_RED				BIT0
+#define LED_GREEN			BIT6
+
+/* Error blink codes */
+#define ERR_LED_CYCLES_ON		200UL  * 1200UL // 200ms @ 1.2MHz
+#define ERR_LED_CYCLES_OFF		1000UL * 1200UL // 100ms @ 1.2MHz
+#define ERR_LED_BLINKS_CALIB		1
+
+void blink_led_and_trap(unsigned int blinks)
+{
+	unsigned int b;
+
+	/* Flash the led and trap */
+	while (1)
+	{
+		P1OUT &= ~LED_RED;
+		__delay_cycles(ERR_LED_CYCLES_OFF);
+		for (b = 0; b < blinks; b++)
+		{
+			P1OUT |= LED_RED;
+			__delay_cycles(ERR_LED_CYCLES_ON);
+			P1OUT &= ~LED_RED;
+			__delay_cycles(ERR_LED_CYCLES_ON);
+		}
+	}
+}
+
 int main(void)
 {
-  WDTCTL = WDTPW + WDTHOLD;                 // Stop WDT
-  if (CALBC1_1MHZ==0xFF)					// If calibration constant erased
-  {											
-    while(1);                               // do not load, trap CPU!!	
-  }
-  DCOCTL = 0;                               // Select lowest DCOx and MODx settings
-  BCSCTL1 = CALBC1_1MHZ;                    // Set DCO
-  DCOCTL = CALDCO_1MHZ;
+	/* Disable watchdog */
+	WDTCTL = WDTPW + WDTHOLD;
+
+	/* Initialize LEDs */
+	P1DIR  =  (LED_RED + LED_GREEN);		// Set LEDs to output
+	P1OUT &= ~(LED_RED + LED_GREEN);		// LEDs off
+
+	/* Calibrate DCO with factory calibration data.
+	 * Catch deleted calibration data and error out.
+	 */
+	if (CALBC1_1MHZ == 0xFF || CALDCO_1MHZ == 0xFF)
+	{
+		blink_led_and_trap(ERR_LED_BLINKS_CALIB);
+	}
+	DCOCTL  = 0;					// Select lowest DCOx and MODx settings
+	DCOCTL  = CALDCO_1MHZ;				// Use the factory calibration data for DCO
+	BCSCTL1 = CALBC1_1MHZ;
+
   P1SEL = BIT1 + BIT2 ;                     // P1.1 = RXD, P1.2=TXD
-  P1SEL2 = BIT1 + BIT2;                      
+  P1SEL2 = BIT1 + BIT2;
   UCA0CTL1 |= UCSSEL_2;                     // SMCLK
   UCA0BR0 = 8;                              // 1MHz 115200
   UCA0BR1 = 0;                              // 1MHz 115200
