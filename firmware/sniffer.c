@@ -42,29 +42,17 @@
  * for an API functional library-approach to peripheral configuration.
  *
  * --/COPYRIGHT--*/
-//******************************************************************************
-//   MSP430G2xx3 Demo - USCI_A0, 115200 UART Echo ISR, DCO SMCLK
-//
-//   Description: Echo a received character, RX ISR used. Normal mode is LPM0.
-//   USCI_A0 RX interrupt triggers TX Echo.
-//   Baud rate divider with 1MHz = 1MHz/115200 = ~8.7
-//   ACLK = n/a, MCLK = SMCLK = CALxxx_1MHZ = 1MHz
-//
-//                MSP430G2xx3
-//             -----------------
-//         /|\|              XIN|-
-//          | |                 |
-//          --|RST          XOUT|-
-//            |                 |
-//            |     P1.2/UCA0TXD|------------>
-//            |                 | 115200 - 8N1
-//            |     P1.1/UCA0RXD|<------------
-//
-//   D. Dang
-//   Texas Instruments Inc.
-//   February 2011
-//   Built with CCS Version 4.2.0 and IAR Embedded Workbench Version: 5.10
-//******************************************************************************
+/******************************************************************************/
+
+/******************************************************************************
+ * This code is based on the following examples provided by Texas Instruments:
+ *
+ * *  file:		msp430g2xx3_uscia0_uart_01_115k.c
+ *    description:	MSP430G2xx3 Demo - USCI_A0, 115200 UART Echo ISR, DCO SMCLK
+ *    author:		D. Dang (Texas Instruments Inc) -- February 2011
+ *
+ ******************************************************************************/
+
 #include <msp430.h>
 
 /* LEDs */
