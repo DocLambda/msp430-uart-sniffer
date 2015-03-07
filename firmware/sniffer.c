@@ -190,4 +190,32 @@ __interrupt void UART0_RX_ISR(void)
 #pragma vector = TIMER1_A1_VECTOR
 __interrupt void UART1_RX_ISR(void)
 {
+	static unsigned char rx1_byte     = 0x00;
+	static unsigned char rx1_bitcount = 8;
+
+	/* Handle the capture / compare interrupts of CCR1A*/
+	if (TA1IV & TA1IV_TA1CCR1)
+	{
+		TA1CCR1 += UART1_DIVIDER;		// Wait for next bit
+		if (TA1CCTL1 & CAP) 			// Capture mode --> start bit
+		{
+			TA1CCTL1 &= ~CAP;		// Switch capture to compare mode
+			TA1CCR1  += UART1_DIVIDER_HALF; // Point CCRx to middle of D0
+		}
+		else
+		{
+			rx1_byte >>= 1;
+			if (TA1CCTL1 & SCCI)		// Get bit waiting in receive latch
+				rx1_byte |= 0x80;	// Set highest bit
+			rx1_bitcount--;
+			if (rx1_bitcount == 0)		// Got all bits
+			{
+				TA1CCTL1 |= CAP;	// Switch back from compare to capture mode
+				rx1_bitcount = 8;	// Re-load bit counter
+
+				while (!(IFG2&UCA0TXIFG));			// USCI_A0 TX buffer ready?
+				UCA0TXBUF = rx1_byte;				// TX -> RXed character
+			}
+		}
+	}
 }
